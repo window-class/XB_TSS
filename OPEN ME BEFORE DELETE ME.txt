@@ -1,0 +1,3 @@
+1. npx isomorphic-git clone --url https://github.com/window-class/XB_TSS.git --dir XB_TSS
+
+run this if you get crashed while running or registering.
