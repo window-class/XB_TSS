@@ -1,99 +1,105 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { Link, useNavigate, useParams } from "react-router";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useNavigate, useParams } from 'react-router-dom';
 
-function UpdateBorrower(){
-    const [msg, setMsg]=useState("");
-    const [msgType, setMsgType]=useState("");
-    const navigate = useNavigate();
-    const borrowers = {
-            BorrowerId:'',
-            BorrowerName:'',
-            Role:''
-      };
-const [borrower, setBorrower]=useState(borrowers); 
-  const inputHandler = async(e)=>{
-    const {name, value} = e.target;
-    setBorrower({...borrower, [name]: value});
-    console.log(name, value);
-  }
-const {id} = useParams();
-useEffect(()=>{
-    axios.get(`http://localhost:7000/api/getBorrById/${id}`)
-    .then((res)=>{
-        setBorrower(res.data);
-        console.log("Found Id:", res);
-    })
-    .catch((error)=>{
-        console.log("Error getting by Id:", error);
-    })
-},[id]);  
-  const submitForm = async(e)=>{
+function UpdateStockOut() {
+  const { itemId } = useParams();
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    ItemId: itemId || '',
+    QuantityOut: '',
+    TotalQuantityOut: '',
+    StockOutDate: '',
+  });
+
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchItem = async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/getStockOutByItemId/${itemId}`
+        );
+        const list = res.data || [];
+        const first = list[0];
+
+        if (!first) return;
+
+        setFormData({
+          ItemId: first.ItemId,
+          QuantityOut: first.QuantityOut ?? '',
+          TotalQuantityOut: first.TotalQuantityOut ?? '',
+          StockOutDate: first.StockOutDate ? new Date(first.StockOutDate).toISOString().slice(0, 16) : '',
+        });
+      } catch (err) {
+        setError(err.response?.data?.msg || err.message);
+      }
+    };
+
+    if (itemId) fetchItem();
+  }, [itemId]);
+
+  const onChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const onSubmit = async (e) => {
     e.preventDefault();
-   try {
-   const res= await axios.put(`http://localhost:7000/api/updateBorr/${id}`, borrower);
-        console.log("Borrower update well:", res);
-        setMsg("Well edited, directing to list page...");
-        setMsgType("well");
-        setTimeout(()=>{navigate('/GetBorrower');}, 3000);
+    setError(null);
 
-   } catch (error) {
-    console.log("Error updating Borrower:", error);
-        setMsg(`Failed to edit:${error} 5 secs to refresh...`);
-        setMsgType("not");
-        setTimeout(()=>{window.location.reload();}, 5000);    
-   }  
-  }
-    return(
-        <div className="flex justify-center items-center min-h-screen bg-blue-400">
-            <div className="w-2xl p-4 bg-gray-50 shadow-lg rounded-lg">
-               <h1 className="font-bold text-2xl p-2">Update Borrower</h1>
-               <form onSubmit={submitForm}>
-                <div>
-                    <label className="block font-medium text-gray-700 mt-2">Borrower Id</label>
-                    <input type="text"
-                           name="BorrowerId"
-                           value={borrower.BorrowerId}
-                           onChange={inputHandler}
-                           placeholder="Enter borrower id..."
-                           autoComplete="off"
-                           required
-                           className="w-full p-2 outline-1 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded"
-                           />
-                </div>
-                <div>
-                    <label className="block font-medium text-gray-700 mt-2">Borrower Name</label>
-                    <input type="text"
-                           name="BorrowerName"
-                           value={borrower.BorrowerName}
-                           placeholder="Enter borrower name..."
-                           onChange={inputHandler}
-                           autoComplete="off"
-                           required
-                           className="w-full p-2 outline-1 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded"
-                           />
-                </div>
-                <div>
-                <label className="block font-medium text-gray-700 mt-2">Select Role</label>
-                <select name="Role" value={borrower.Role} onChange={inputHandler} autoComplete="off" required
-                className="w-full p-2 outline-1 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 rounded"
-                >
-                    <option value="">Select role</option>
-                    <option value='Teacher'>Teacher</option>
-                    <option value='Trainee'>Trainee</option>
-                </select>
-                </div>
-                <div className={`w-full p-2 mt-2 text-center font-medium 
-                              ${msgType =='well'?'text-green-500':'text-red-500'}`}>
-                            {msg}
-                </div>
-                <button type="submit" className="mt-2 p-2 font-medium text-white bg-blue-500 hover:bg-orange-500 rounded">
-                    Register</button>&nbsp;&nbsp;
-                <Link to="/GetBorrower" className="text-blue-500 hover:underline font-medium text-md">View List</Link>                    
-               </form> 
-            </div>
-        </div>
-    )
+    try {
+      const payload = {
+        ...formData,
+        QuantityOut: Number(formData.QuantityOut),
+        TotalQuantityOut: Number(formData.TotalQuantityOut),
+        StockOutDate: formData.StockOutDate ? new Date(formData.StockOutDate) : undefined,
+      };
+
+      await axios.put(
+        `${import.meta.env.VITE_API_BASE_URL}/api/updateStockOut/${itemId}`,
+        payload
+      );
+
+      navigate('/GetStockOut');
+    } catch (err) {
+      setError(err.response?.data?.msg || err.message);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex justify-center items-center bg-gray-200 p-4">
+      <div className="w-full max-w-md bg-gray-50 shadow-lg p-6 rounded-lg">
+        <h2 className="font-bold text-2xl">Update Stock Out</h2>
+        {error && <p className="text-red-500 font-medium mt-2">{error}</p>}
+
+        <form onSubmit={onSubmit}>
+          <div className="mt-3">
+            <label className="block font-medium">ItemId</label>
+            <input className="w-full p-2 rounded border" name="ItemId" value={formData.ItemId} disabled />
+          </div>
+
+          <div className="mt-3">
+            <label className="block font-medium">QuantityOut</label>
+            <input type="number" className="w-full p-2 rounded border" name="QuantityOut" value={formData.QuantityOut} onChange={onChange} required />
+          </div>
+
+          <div className="mt-3">
+            <label className="block font-medium">TotalQuantityOut</label>
+            <input type="number" className="w-full p-2 rounded border" name="TotalQuantityOut" value={formData.TotalQuantityOut} onChange={onChange} required />
+          </div>
+
+          <div className="mt-3">
+            <label className="block font-medium">StockOutDate</label>
+            <input type="datetime-local" className="w-full p-2 rounded border" name="StockOutDate" value={formData.StockOutDate} onChange={onChange} />
+          </div>
+
+          <button type="submit" className="w-full mt-4 bg-green-600 p-2 text-white font-medium hover:bg-green-700 rounded">
+            Save
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 }
 
-export default UpdateBorrower;
+export default UpdateStockOut;
+

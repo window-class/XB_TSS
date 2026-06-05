@@ -4,7 +4,6 @@ import axios from 'axios';
 import {Link, useParams} from 'react-router';
 
 function GetSupplier() {
-    const {id} = useParams();
     const [suppliers, setSuppliers]=useState([]);
 
     useEffect(()=>{

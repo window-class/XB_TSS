@@ -4,37 +4,36 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 
-import suppRoute from './routes/SuppRoute.js';
-import borrRoute from './routes/BorrowerRoute.js';
-import bookRoute from './routes/BookRoute.js';
-import reportRoute from './routes/reportRoute.js';
-
-//Authentication Routes
 import authRoutes from './routes/auth.js';
+import stockInRoutes from './routes/stockInRoutes.js';
+import stockOutRoutes from './routes/stockOutRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
 
- const app=express();
-        
-       app.use(express.json());
-       app.use(bodyParser.json());
-       app.use(cors());
-       dotenv.config();
-    app.use("/api", suppRoute);
-    app.use("/api", borrRoute);
-    app.use("/api", bookRoute);
-    app.use("/api", reportRoute); //Report middleware.....
-    app.use('/api/auth', authRoutes);
+const app = express();
 
-    
- const PORT = process.env.PORT || 7070;
- const MONGO = process.env.MONGO;
+app.use(express.json());
+app.use(bodyParser.json());
+app.use(cors());
+dotenv.config();
 
- mongoose.connect(MONGO)
-         .then(()=>{
-            console.log(`DB Connected on: ${MONGO}`);
-        app.listen(PORT, ()=>{
-            console.log(`Server runs on: ${PORT}`);
-        })    
-         })
-         .catch((error)=>{
-            console.log("Error running server:", error);
-         })
+app.use('/api/auth', authRoutes);
+app.use('/api', stockInRoutes);
+app.use('/api', stockOutRoutes);
+app.use('/api', reportRoutes);
+
+const PORT = process.env.PORT || 7070;
+
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGO;
+
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log(`DB Connected on: ${MONGO_URI}`);
+    app.listen(PORT, () => {
+      console.log(`Server runs on: ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.log('Error running server:', error);
+  });
+
